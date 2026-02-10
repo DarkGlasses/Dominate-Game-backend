@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+model Users {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      Role    @default(user)
+  profile    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews   Reviews[]
+  communityPosts CommunityPost[]
+  comments  comment[]
+  
+}
+
+model Games {
+  id          Int      @id @default(autoincrement())
+  title       String  
+  genre       Json
+  platform    Json
+  developer   String
+  publisher   String
+  rating      Int
+  picture     String?
+  releaseDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reviews     Reviews[] 
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  headline  String
+  content   String
+  picture   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reviews {
+  id        Int      @id @default(autoincrement())
+  gameId    Int
+  userId    Int
+  rating    Int      @db.TinyInt
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, gameId])
+
+  game      Games @relation(fields: [gameId], references: [id])
+  user      Users @relation(fields: [userId], references: [id])
+
+  @@index([gameId])
+  @@index([userId])
+}
+
+model CommunityPost {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  content   String
+  picture   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      Users @relation(fields: [userId], references: [id])
+  comments  comment[]
+
+  @@index([userId])
+}
+
+model comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  parentId  Int?
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      CommunityPost @relation(fields: [postId], references: [id])
+  user      Users         @relation(fields: [userId], references: [id])
+
+  parent  comment?   @relation("CommentToComment", fields: [parentId], references: [id])
+  replies   comment[] @relation("CommentToComment")
+
+  @@index([postId])
+  @@index([userId])
+}
+
